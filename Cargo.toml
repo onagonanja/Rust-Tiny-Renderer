@@ -1,0 +1,18 @@
+[package]
+name = "RustRenderer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+image = "0.25.2"
+lazy_static = "1.5.0"
+criterion = "0.3"
+tobj = "4.0.2"
+
+[lib]
+name = "lib"
+path = "src/lib.rs"
+
+[[bench]]
+name = "renderer_bench"
+harness = false
