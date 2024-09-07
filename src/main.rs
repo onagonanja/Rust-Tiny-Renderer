@@ -17,8 +17,10 @@ fn main() {
 
     let model = img_io::load_obj("obj/african_head.obj");
 
+    let texture = img_io::load_image("obj/african_head_diffuse.tga").unwrap();
+    //let texture = img_io::load_image("obj/uvsample5.png").unwrap();
     //render_obj_line(&model, &mut image);
-    render_obj(&model, &mut image);
+    render_obj(&model, &mut image, &texture);
 
     img_io::output_image("output.png", &mut image);
     println!("{:?}", now.elapsed());

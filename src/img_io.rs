@@ -1,5 +1,5 @@
 use image::imageops::flip_vertical_in_place;
-use image::{ImageBuffer, Rgb};
+use image::{ImageBuffer, ImageReader, Rgb};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::path::Path;
@@ -18,6 +18,14 @@ pub fn output_image(filename: &str, image: &mut ImageBuffer<image::Rgb<u8>, Vec<
     flip_vertical_in_place(image);
     image.save(filename).unwrap();
     println!("Saved image!");
+}
+
+pub fn load_image(
+    filename: &str,
+) -> Result<ImageBuffer<image::Rgb<u8>, Vec<u8>>, Box<dyn std::error::Error>> {
+    let mut img = ImageReader::open(filename)?.decode()?.to_rgb8();
+    flip_vertical_in_place(&mut img);
+    Ok(img)
 }
 
 pub fn load_obj(filename: &str) -> tobj::Model {
