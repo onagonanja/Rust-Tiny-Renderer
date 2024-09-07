@@ -17,6 +17,7 @@ fn main() {
 
     let model = img_io::load_obj("obj/african_head.obj");
 
+    //render_obj_line(&model, &mut image);
     render_obj(&model, &mut image);
 
     img_io::output_image("output.png", &mut image);

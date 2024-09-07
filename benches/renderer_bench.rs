@@ -12,7 +12,7 @@ pub fn renderer_benchmark(c: &mut Criterion) {
     });
 
     c.bench_function("obj", |b| {
-        b.iter(|| render_obj(&model, &mut ImageBuffer::new(800, 600)))
+        b.iter(|| render_obj_line(&model, &mut ImageBuffer::new(800, 600)))
     });
 }
 
