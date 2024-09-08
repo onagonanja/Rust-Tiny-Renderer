@@ -99,7 +99,6 @@ pub fn line(_x0: i32, _y0: i32, _x1: i32, _y1: i32, image: &mut ImageBuffer<Rgb<
     }
 }
 
-// calculate barycentric coordinates
 fn barycentric(pts: &[Pos3f; 3], p: Pos2i) -> Pos3f {
     let u = Pos3f {
         x: pts[2].x - pts[0].x,
@@ -112,7 +111,7 @@ fn barycentric(pts: &[Pos3f; 3], p: Pos2i) -> Pos3f {
         z: pts[0].y - p.y as f32,
     };
     let cross = u ^ v;
-    if cross.z.abs() < 1.0 {
+    if cross.z.abs() == 0.0 {
         return Pos3f {
             x: -1.0,
             y: 1.0,
@@ -174,7 +173,7 @@ fn get_triangle_tex_coords(tex_coords: &[f32], tex_index: &[u32], index: usize) 
     triangle_tex_coords
 }
 
-pub fn triangle(
+pub fn render_triangle(
     pts: &[Pos3f; 3],
     image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>,
     z_buffer: &mut [f32],
@@ -291,7 +290,7 @@ pub fn render_obj(
         let triangle_tex_coords: [Pos3f; 3] =
             get_triangle_tex_coords(&model.mesh.texcoords, &model.mesh.texcoord_indices, i);
 
-        triangle(
+        render_triangle(
             &pts,
             image,
             &mut z_buffer,

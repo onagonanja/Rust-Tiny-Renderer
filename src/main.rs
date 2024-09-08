@@ -12,14 +12,10 @@ static HEIGHT: u32 = 800;
 
 fn main() {
     let now = time::Instant::now();
-
     let mut image: ImageBuffer<Rgb<u8>, Vec<u8>> = init_image(WIDTH, HEIGHT);
-
     let model = img_io::load_obj("obj/african_head.obj");
-
     let texture = img_io::load_image("obj/african_head_diffuse.tga").unwrap();
     render_obj(&model, &mut image, &texture);
-
     img_io::output_image("output.png", &mut image);
     println!("{:?}", now.elapsed());
 }
