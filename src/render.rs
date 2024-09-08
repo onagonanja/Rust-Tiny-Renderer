@@ -194,7 +194,6 @@ pub fn render_triangle(
     };
 
     for p in pts.iter().take(3) {
-        // FIXME: avoid to truncate to i32
         bboxmin.x = std::cmp::max(0, bboxmin.x.min((p.x + 1.0) as i32));
         bboxmin.y = std::cmp::max(0, bboxmin.y.min((p.y + 1.0) as i32));
         bboxmax.x = std::cmp::min(clamp.x, bboxmax.x.max((p.x + 1.0) as i32));
