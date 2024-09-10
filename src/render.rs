@@ -41,21 +41,8 @@ pub fn line(_x0: i32, _y0: i32, _x1: i32, _y1: i32, image: &mut ImageBuffer<Rgb<
 
 // calculate barycentric coordinates
 fn barycentric(pts: &[Vector3<f32>; 3], p: Vector2<f32>) -> Vector3<f32> {
-    let a = Vector3::new(
-        pts[2].x - pts[0].x,
-        pts[1].x - pts[0].x,
-        pts[0].x - p.x as f32,
-    );
-    let u = Vector3::new(
-        pts[2].x - pts[0].x,
-        pts[1].x - pts[0].x,
-        pts[0].x - p.x as f32,
-    );
-    let v = Vector3::new(
-        pts[2].y - pts[0].y,
-        pts[1].y - pts[0].y,
-        pts[0].y - p.y as f32,
-    );
+    let u = Vector3::new(pts[2].x - pts[0].x, pts[1].x - pts[0].x, pts[0].x - p.x);
+    let v = Vector3::new(pts[2].y - pts[0].y, pts[1].y - pts[0].y, pts[0].y - p.y);
     let cross = u.cross(&v);
     if cross.z.abs() < 1.0 {
         return Vector3::new(-1.0, 1.0, 1.0);
@@ -90,7 +77,7 @@ fn get_tringle_positions(
         positions[i] = Vector3::new(
             (model.mesh.positions[3 * face[i]] + 1.0) * width as f32 / 2.0,
             (model.mesh.positions[3 * face[i] + 1] + 1.0) * height as f32 / 2.0,
-            (model.mesh.positions[3 * face[i] + 2] + 1.0),
+            model.mesh.positions[3 * face[i] + 2] + 1.0,
         );
     }
     positions
