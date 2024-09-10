@@ -1,3 +1,5 @@
+mod consts;
+mod geometry;
 mod img_io;
 mod render;
 

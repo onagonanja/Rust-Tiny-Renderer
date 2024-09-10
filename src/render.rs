@@ -1,6 +1,8 @@
 use image::{ImageBuffer, Rgb};
-use nalgebra::{Vector2, Vector3};
+use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use tobj::Model;
+
+use crate::{consts::CAMERA, geometry};
 
 pub fn line(_x0: i32, _y0: i32, _x1: i32, _y1: i32, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>) {
     let (mut x0, mut x1, mut y0, mut y1) = (_x0, _x1, _y0, _y1);
@@ -52,35 +54,6 @@ fn barycentric(pts: &[Vector3<f32>; 3], p: Vector2<f32>) -> Vector3<f32> {
         cross.y / cross.z,
         cross.x / cross.z,
     )
-}
-
-fn get_world_coords(model: &Model, face: &[usize; 3]) -> [Vector3<f32>; 3] {
-    let mut world_coords = [Vector3::new(0.0, 0.0, 0.0); 3];
-    for i in 0..3 {
-        world_coords[i] = Vector3::new(
-            model.mesh.positions[3 * face[i]],
-            model.mesh.positions[3 * face[i] + 1],
-            model.mesh.positions[3 * face[i] + 2],
-        );
-    }
-    world_coords
-}
-
-fn get_tringle_positions(
-    model: &Model,
-    face: &[usize; 3],
-    width: i32,
-    height: i32,
-) -> [Vector3<f32>; 3] {
-    let mut positions = [Vector3::new(0.0, 0.0, 0.0); 3];
-    for i in 0..3 {
-        positions[i] = Vector3::new(
-            (model.mesh.positions[3 * face[i]] + 1.0) * width as f32 / 2.0,
-            (model.mesh.positions[3 * face[i] + 1] + 1.0) * height as f32 / 2.0,
-            model.mesh.positions[3 * face[i] + 2] + 1.0,
-        );
-    }
-    positions
 }
 
 fn get_triangle_tex_coords(
@@ -182,6 +155,16 @@ pub fn render_obj(
 ) {
     let mut z_buffer = vec![f32::MIN; (image.width() * image.height()) as usize];
 
+    let mut projection: Matrix4<f32> = Matrix4::identity();
+    projection[(3, 2)] = -1.0 / CAMERA.z;
+    let viewport = geometry::get_viewport(
+        image.width() as f32 / 8.0,
+        image.height() as f32 / 8.0,
+        image.width() as f32 * 3.0 / 4.0,
+        image.height() as f32 * 3.0 / 4.0,
+    );
+    let affine = viewport * projection;
+
     for i in 0..model.mesh.indices.len() / 3 {
         let face: [usize; 3] = [
             model.mesh.indices[3 * i] as usize,
@@ -189,12 +172,27 @@ pub fn render_obj(
             model.mesh.indices[3 * i + 2] as usize,
         ];
 
-        let pts = get_tringle_positions(model, &face, image.width() as i32, image.height() as i32);
+        let mut world_coords = [Vector3::new(0.0, 0.0, 0.0); 3];
+        let mut screen_coords = [Vector3::new(0.0, 0.0, 0.0); 3];
 
-        let world_coords = get_world_coords(model, &face);
+        for i in 0..3 {
+            let v = Vector4::new(
+                model.mesh.positions[3 * face[i]],
+                model.mesh.positions[3 * face[i] + 1],
+                model.mesh.positions[3 * face[i] + 2],
+                1.0,
+            );
+            let transformed = affine * v;
+            world_coords[i] = Vector3::new(v.x, v.y, v.z);
+            screen_coords[i] = Vector3::new(
+                transformed.x / transformed.w,
+                transformed.y / transformed.w,
+                transformed.z / transformed.w,
+            );
+        }
 
-        let _n = (world_coords[2] - world_coords[0]).cross(&(world_coords[1] - world_coords[0]));
-        let n = _n.normalize();
+        let n = (world_coords[2] - world_coords[0]).cross(&(world_coords[1] - world_coords[0]));
+        let n = n.normalize();
 
         let light_dir = Vector3::new(0.0, 0.0, -1.0);
 
@@ -208,7 +206,7 @@ pub fn render_obj(
             get_triangle_tex_coords(&model.mesh.texcoords, &model.mesh.texcoord_indices, i);
 
         triangle(
-            &pts,
+            &screen_coords,
             image,
             &mut z_buffer,
             tex_image,
