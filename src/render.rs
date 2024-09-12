@@ -2,7 +2,10 @@ use image::{ImageBuffer, Rgb};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use tobj::Model;
 
-use crate::{consts::CAMERA, geometry};
+use crate::{
+    consts::{ASPECT, CAMERA, FOVY},
+    geometry,
+};
 
 pub fn line(_x0: i32, _y0: i32, _x1: i32, _y1: i32, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>) {
     let (mut x0, mut x1, mut y0, mut y1) = (_x0, _x1, _y0, _y1);
@@ -155,15 +158,19 @@ pub fn render_obj(
 ) {
     let mut z_buffer = vec![f32::MIN; (image.width() * image.height()) as usize];
 
-    let mut projection: Matrix4<f32> = Matrix4::identity();
-    projection[(3, 2)] = -1.0 / CAMERA.z;
+    let projection = geometry::get_projection(FOVY, ASPECT, -1.0);
     let viewport = geometry::get_viewport(
         image.width() as f32 / 8.0,
         image.height() as f32 / 8.0,
         image.width() as f32 * 3.0 / 4.0,
         image.height() as f32 * 3.0 / 4.0,
     );
-    let affine = viewport * projection;
+    let lookat = geometry::get_lookat(
+        Vector3::new(CAMERA.x, CAMERA.y, CAMERA.z),
+        Vector3::new(0.0, 0.0, 0.0),
+        Vector3::new(0.0, 1.0, 0.0),
+    );
+    let cor_conv = viewport * projection * lookat;
 
     for i in 0..model.mesh.indices.len() / 3 {
         let face: [usize; 3] = [
@@ -182,7 +189,7 @@ pub fn render_obj(
                 model.mesh.positions[3 * face[i] + 2],
                 1.0,
             );
-            let transformed = affine * v;
+            let transformed = cor_conv * v;
             world_coords[i] = Vector3::new(v.x, v.y, v.z);
             screen_coords[i] = Vector3::new(
                 transformed.x / transformed.w,

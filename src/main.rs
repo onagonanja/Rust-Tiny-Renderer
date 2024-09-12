@@ -2,7 +2,9 @@ mod consts;
 mod geometry;
 mod img_io;
 mod render;
+mod shader;
 
+use consts::{DIABLO3_DIFFUSE, DIABLO3_OBJ};
 use image::{ImageBuffer, Rgb};
 use std::time;
 
@@ -17,9 +19,9 @@ fn main() {
 
     let mut image: ImageBuffer<Rgb<u8>, Vec<u8>> = init_image(WIDTH, HEIGHT);
 
-    let model = img_io::load_obj("obj/african_head.obj");
+    let model = img_io::load_obj(DIABLO3_OBJ);
 
-    let texture = img_io::load_image("obj/african_head_diffuse.tga").unwrap();
+    let texture = img_io::load_image(DIABLO3_DIFFUSE).unwrap();
     //let texture = img_io::load_image("obj/uvsample5.png").unwrap();
     //render_obj_line(&model, &mut image);
     render_obj(&model, &mut image, &texture);
