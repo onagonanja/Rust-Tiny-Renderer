@@ -1,29 +1,25 @@
-use nalgebra::{Matrix4, Vector3};
-use tobj::Model;
+// use nalgebra::{Matrix4, Vector3};
+// use tobj::Model;
 
-struct GouphShader {
-    varyng_intensity: Vector3<f32>,
-}
+// struct GouphShader {
+//     varyng_intensity: Vec<f32>,
+//     coord_conv: Matrix4<f32>,
+// }
 
-impl GouphShader {
-    fn new() -> Self {
-        GouphShader {
-            varyng_intensity: Vector3::new(0.0, 0.0, 0.0),
-        }
-    }
+// impl GouphShader {
+//     fn new(v_num: usize, coord_conv: Matrix4<f32>) -> Self {
+//         GouphShader {
+//             varyng_intensity: vec![0.0; v_num],
+//             coord_conv,
+//         }
+//     }
 
-    // fn vertex(
-    //     &mut self,
-    //     f_idx: i32,
-    //     v_idx: i32,
-    //     cor_conv: &Matrix4<f32>,
-    //     model: &Model,
-    // ) -> Vector3<f32> {
+//     fn vertex(&mut self, f_idx: usize, v_idx: usize, model: &Model) -> Vector3<f32> {
+//         self.varyng_intensity[v_idx] = 0.0.max(model.mesh.material.diffuse[0]);
+//     }
 
-    // }
-
-    // fn fragment(&mut self, intensity: Vector3<f32>) -> Vector3<f32> {
-    //     self.varyng_intensity = intensity;
-    //     intensity
-    // }
-}
+//     fn fragment(&mut self, intensity: Vector3<f32>) -> Vector3<f32> {
+//         self.varyng_intensity = intensity;
+//         intensity
+//     }
+// }

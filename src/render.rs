@@ -1,10 +1,11 @@
 use image::{ImageBuffer, Rgb};
-use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
+use nalgebra::{Vector2, Vector3, Vector4};
 use tobj::Model;
 
 use crate::{
     consts::{ASPECT, CAMERA, FOVY},
     geometry,
+    img_io::WModel,
 };
 
 pub fn line(_x0: i32, _y0: i32, _x1: i32, _y1: i32, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>) {
@@ -59,38 +60,21 @@ fn barycentric(pts: &[Vector3<f32>; 3], p: Vector2<f32>) -> Vector3<f32> {
     )
 }
 
-fn get_triangle_tex_coords(
-    tex_coords: &[f32],
-    tex_index: &[u32],
-    index: usize,
-) -> [Vector3<f32>; 3] {
-    let mut triangle_tex_coords = [Vector3::new(0.0, 0.0, 0.0); 3];
-    for i in 0..3 {
-        triangle_tex_coords[i] = Vector3::new(
-            tex_coords[2 * tex_index[3 * index + i] as usize],
-            tex_coords[2 * tex_index[3 * index + i] as usize + 1],
-            0.0,
-        );
-    }
-    triangle_tex_coords
-}
-
 pub fn triangle(
+    model: &WModel,
+    face_index: usize,
     pts: &[Vector3<f32>; 3],
     image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>,
     z_buffer: &mut [f32],
-    tex_image: &ImageBuffer<Rgb<u8>, Vec<u8>>,
-    triangle_tex_coords: &[Vector3<f32>; 3],
     intensity: f32,
 ) {
+    let triangle_tex_coords = model.get_face_uv(face_index);
+
     let mut bboxmin = Vector2::new((image.width() - 1) as i32, (image.height() - 1) as i32);
-
     let mut bboxmax = Vector2::new(0, 0);
-
     let clamp = Vector2::new(image.width() as i32 - 1, image.height() as i32 - 1);
 
     for p in pts.iter().take(3) {
-        // FIXME: avoid to truncate to i32
         bboxmin.x = std::cmp::max(0, bboxmin.x.min((p.x + 1.0) as i32));
         bboxmin.y = std::cmp::max(0, bboxmin.y.min((p.y + 1.0) as i32));
         bboxmax.x = std::cmp::min(clamp.x, bboxmax.x.max((p.x + 1.0) as i32));
@@ -136,9 +120,9 @@ pub fn triangle(
                 max_u = max_u.max(uv.x);
                 max_v = max_v.max(uv.y);
 
-                let color = tex_image.get_pixel(
-                    (uv.x * tex_image.width() as f32) as u32,
-                    (uv.y * tex_image.height() as f32) as u32,
+                let color = model.texture.get_pixel(
+                    (uv.x * model.texture.width() as f32) as u32,
+                    (uv.y * model.texture.height() as f32) as u32,
                 );
                 let color = Rgb([
                     (color[0] as f32 * intensity) as u8,
@@ -151,11 +135,7 @@ pub fn triangle(
     }
 }
 
-pub fn render_obj(
-    model: &Model,
-    image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>,
-    tex_image: &ImageBuffer<Rgb<u8>, Vec<u8>>,
-) {
+pub fn render_obj(model: &WModel, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>) {
     let mut z_buffer = vec![f32::MIN; (image.width() * image.height()) as usize];
 
     let projection = geometry::get_projection(FOVY, ASPECT, -1.0);
@@ -172,26 +152,17 @@ pub fn render_obj(
     );
     let cor_conv = viewport * projection * lookat;
 
-    for i in 0..model.mesh.indices.len() / 3 {
-        let face: [usize; 3] = [
-            model.mesh.indices[3 * i] as usize,
-            model.mesh.indices[3 * i + 1] as usize,
-            model.mesh.indices[3 * i + 2] as usize,
-        ];
-
+    for i in 0..model.face_num {
         let mut world_coords = [Vector3::new(0.0, 0.0, 0.0); 3];
         let mut screen_coords = [Vector3::new(0.0, 0.0, 0.0); 3];
+        let face = model.get_face(i);
 
-        for i in 0..3 {
-            let v = Vector4::new(
-                model.mesh.positions[3 * face[i]],
-                model.mesh.positions[3 * face[i] + 1],
-                model.mesh.positions[3 * face[i] + 2],
-                1.0,
-            );
+        for j in 0..3 {
+            let v = model.get_vertex(face[j]);
+            let v = Vector4::new(v.x, v.y, v.z, 1.0);
             let transformed = cor_conv * v;
-            world_coords[i] = Vector3::new(v.x, v.y, v.z);
-            screen_coords[i] = Vector3::new(
+            world_coords[j] = Vector3::new(v.x, v.y, v.z);
+            screen_coords[j] = Vector3::new(
                 transformed.x / transformed.w,
                 transformed.y / transformed.w,
                 transformed.z / transformed.w,
@@ -209,17 +180,7 @@ pub fn render_obj(
             continue;
         }
 
-        let triangle_tex_coords: [Vector3<f32>; 3] =
-            get_triangle_tex_coords(&model.mesh.texcoords, &model.mesh.texcoord_indices, i);
-
-        triangle(
-            &screen_coords,
-            image,
-            &mut z_buffer,
-            tex_image,
-            &triangle_tex_coords,
-            intensity,
-        );
+        triangle(&model, i, &screen_coords, image, &mut z_buffer, intensity);
     }
 }
 

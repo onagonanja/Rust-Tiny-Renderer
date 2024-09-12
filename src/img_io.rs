@@ -1,6 +1,7 @@
 use image::imageops::flip_vertical_in_place;
 use image::{ImageBuffer, ImageReader, Rgb};
 use lazy_static::lazy_static;
+use nalgebra::{Vector2, Vector3};
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -43,4 +44,58 @@ lazy_static! {
         colors.insert("blue".to_string(), Rgb([0, 0, 255]));
         colors
     };
+}
+
+pub struct WModel {
+    pub face_num: usize,
+    pub model: tobj::Model,
+    pub texture: ImageBuffer<image::Rgb<u8>, Vec<u8>>,
+    pub tex_uv: Vec<[Vector2<f32>; 3]>, // tex_uv[face_index] = [[u1, v1], [u2, v2], [u3, v3]]
+    pub faces: Vec<Vector3<usize>>, // faces[face_index] = [vertex_index1, vertex_index2, vertex_index3]
+}
+
+impl WModel {
+    pub fn new(model: tobj::Model, texture: ImageBuffer<image::Rgb<u8>, Vec<u8>>) -> Self {
+        let face_num = model.mesh.indices.len() / 3;
+        let mut tex_uv = vec![[Vector2::new(0.0, 0.0); 3]; face_num];
+        let mut faces = vec![Vector3::new(0, 0, 0); face_num];
+
+        for i in 0..face_num {
+            faces[i] = Vector3::new(
+                model.mesh.indices[i * 3] as usize,
+                model.mesh.indices[i * 3 + 1] as usize,
+                model.mesh.indices[i * 3 + 2] as usize,
+            );
+            for j in 0..3 {
+                tex_uv[i][j] = Vector2::new(
+                    model.mesh.texcoords[2 * model.mesh.texcoord_indices[3 * i + j] as usize],
+                    model.mesh.texcoords[2 * model.mesh.texcoord_indices[3 * i + j] as usize + 1],
+                );
+            }
+        }
+
+        WModel {
+            face_num,
+            model,
+            texture,
+            tex_uv,
+            faces,
+        }
+    }
+
+    pub fn get_face(&self, face_index: usize) -> Vector3<usize> {
+        self.faces[face_index]
+    }
+
+    pub fn get_vertex(&self, vertex_index: usize) -> Vector3<f32> {
+        Vector3::new(
+            self.model.mesh.positions[vertex_index * 3],
+            self.model.mesh.positions[vertex_index * 3 + 1],
+            self.model.mesh.positions[vertex_index * 3 + 2],
+        )
+    }
+
+    pub fn get_face_uv(&self, face_index: usize) -> [Vector2<f32>; 3] {
+        self.tex_uv[face_index]
+    }
 }
