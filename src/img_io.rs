@@ -52,6 +52,7 @@ pub struct WModel {
     pub texture: ImageBuffer<image::Rgb<u8>, Vec<u8>>,
     pub tex_uv: Vec<[Vector2<f32>; 3]>, // tex_uv[face_index] = [[u1, v1], [u2, v2], [u3, v3]]
     pub faces: Vec<Vector3<usize>>, // faces[face_index] = [vertex_index1, vertex_index2, vertex_index3]
+    pub normals: Vec<[Vector3<f32>; 3]>, // normals[face_index] = [[nx1, ny1, nz1], [nx2, ny2, nz2], [nx3, ny3, nz3]]
 }
 
 impl WModel {
@@ -59,6 +60,7 @@ impl WModel {
         let face_num = model.mesh.indices.len() / 3;
         let mut tex_uv = vec![[Vector2::new(0.0, 0.0); 3]; face_num];
         let mut faces = vec![Vector3::new(0, 0, 0); face_num];
+        let mut normals = vec![[Vector3::new(0.0, 0.0, 0.0); 3]; face_num];
 
         for i in 0..face_num {
             faces[i] = Vector3::new(
@@ -71,6 +73,11 @@ impl WModel {
                     model.mesh.texcoords[2 * model.mesh.texcoord_indices[3 * i + j] as usize],
                     model.mesh.texcoords[2 * model.mesh.texcoord_indices[3 * i + j] as usize + 1],
                 );
+                normals[i][j] = Vector3::new(
+                    model.mesh.normals[3 * model.mesh.normal_indices[3 * i + j] as usize],
+                    model.mesh.normals[3 * model.mesh.normal_indices[3 * i + j] as usize + 1],
+                    model.mesh.normals[3 * model.mesh.normal_indices[3 * i + j] as usize + 2],
+                );
             }
         }
 
@@ -80,6 +87,7 @@ impl WModel {
             texture,
             tex_uv,
             faces,
+            normals,
         }
     }
 
@@ -97,5 +105,9 @@ impl WModel {
 
     pub fn get_face_uv(&self, face_index: usize) -> [Vector2<f32>; 3] {
         self.tex_uv[face_index]
+    }
+
+    pub fn get_face_normal(&self, face_index: usize) -> [Vector3<f32>; 3] {
+        self.normals[face_index]
     }
 }
