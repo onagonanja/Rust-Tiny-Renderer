@@ -17,12 +17,10 @@ static HEIGHT: u32 = 800;
 fn main() {
     let now = time::Instant::now();
     let mut image: ImageBuffer<Rgb<u8>, Vec<u8>> = init_image(WIDTH, HEIGHT);
-    // let model = img_io::load_obj(DIABLO3_OBJ);
-    // let texture = img_io::load_image(DIABLO3_DIFFUSE).unwrap();
     let model = img_io::load_obj(AFRICAN_HEAD_OBJ);
     let texture = img_io::load_image(AFRICAN_HEAD_DIFFUSE).unwrap();
-    let model = WModel::new(model, texture);
-    render_obj(&model, &mut image);
+    let mut model = WModel::new(model, texture);
+    render_obj(&mut model, &mut image);
     img_io::output_image("output.png", &mut image);
     println!("{:?}", now.elapsed());
 }

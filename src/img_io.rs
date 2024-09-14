@@ -1,7 +1,7 @@
 use image::imageops::flip_vertical_in_place;
 use image::{ImageBuffer, ImageReader, Rgb};
 use lazy_static::lazy_static;
-use nalgebra::{Vector2, Vector3};
+use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -109,5 +109,16 @@ impl WModel {
 
     pub fn get_face_normal(&self, face_index: usize) -> [Vector3<f32>; 3] {
         self.normals[face_index]
+    }
+
+    pub fn trans_normals(&mut self, m: &Matrix4<f32>) {
+        let u: Matrix4<f32> = m.transpose().try_inverse().unwrap();
+        for f in self.normals.iter_mut() {
+            for n in f.iter_mut() {
+                let mut n_ = Vector4::new(n.x, n.y, n.z, 0.0);
+                n_ = u * n_;
+                *n = Vector3::new(n_.x, n_.y, n_.z);
+            }
+        }
     }
 }

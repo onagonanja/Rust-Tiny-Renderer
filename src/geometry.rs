@@ -1,4 +1,3 @@
-use crate::consts::DEPTH;
 use nalgebra::{Matrix4, Vector3};
 
 pub fn get_viewport(x: f32, y: f32, w: f32, h: f32) -> Matrix4<f32> {
@@ -6,17 +5,15 @@ pub fn get_viewport(x: f32, y: f32, w: f32, h: f32) -> Matrix4<f32> {
 
     m[(0, 3)] = x + w / 2.0;
     m[(1, 3)] = y + h / 2.0;
-    m[(2, 3)] = 0.5;
 
     m[(0, 0)] = w / 2.0;
     m[(1, 1)] = h / 2.0;
-    m[(2, 2)] = DEPTH as f32 / 2.0;
 
     m
 }
 
-pub fn get_lookat(eye: Vector3<f32>, center: Vector3<f32>, up: Vector3<f32>) -> Matrix4<f32> {
-    let z = (eye - center).normalize();
+pub fn get_lookat(cam: Vector3<f32>, p: Vector3<f32>, up: Vector3<f32>) -> Matrix4<f32> {
+    let z = (cam - p).normalize();
     let x = up.cross(&z).normalize();
     let y = z.cross(&x).normalize();
 
@@ -27,7 +24,7 @@ pub fn get_lookat(eye: Vector3<f32>, center: Vector3<f32>, up: Vector3<f32>) -> 
         minv[(0, i)] = x[i];
         minv[(1, i)] = y[i];
         minv[(2, i)] = z[i];
-        tr[(i, 3)] = -eye[i];
+        tr[(i, 3)] = -cam[i];
     }
 
     minv * tr

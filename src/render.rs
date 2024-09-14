@@ -77,7 +77,7 @@ pub fn triangle(
     }
 }
 
-pub fn render_obj(model: &WModel, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>) {
+pub fn render_obj(model: &mut WModel, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>) {
     let mut z_buffer = vec![f32::MIN; (image.width() * image.height()) as usize];
 
     let projection = geometry::get_projection(FOVY, ASPECT, -1.0);
@@ -92,8 +92,9 @@ pub fn render_obj(model: &WModel, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>) {
         Vector3::new(0.0, 0.0, 0.0),
         Vector3::new(0.0, 1.0, 0.0),
     );
-    let cor_conv = viewport * projection * lookat;
 
+    let cor_conv = viewport * projection * lookat;
+    model.trans_normals(&cor_conv);
     let mut shader = GouphShader::new(model.face_num, cor_conv, &model);
 
     for i in 0..model.face_num {
