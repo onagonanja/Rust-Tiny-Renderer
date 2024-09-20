@@ -69,8 +69,14 @@ pub fn triangle(
                     (uv.x * model.texture.width() as f32) as u32,
                     (uv.y * model.texture.height() as f32) as u32,
                 );
+
+                let spec_color = model.specular_tex.get_pixel(
+                    (uv.x * model.specular_tex.width() as f32) as u32,
+                    (uv.y * model.specular_tex.height() as f32) as u32,
+                );
+
                 let mut color = Rgb([color[0], color[1], color[2]]);
-                shader.fragment(face_index, bc_screen, &mut color);
+                shader.fragment(&mut color, &spec_color, &uv);
                 image.put_pixel(x as u32, y as u32, color);
             }
         }
@@ -94,16 +100,19 @@ pub fn render_obj(model: &mut WModel, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>)
     );
 
     let cor_conv = viewport * projection * lookat;
-    model.trans_normals(&cor_conv);
+    model.trans_normals(&lookat);
+
+    // println!("{:?}", model.light);
+    // model.trans_light(&lookat);
+    // println!("{:?}", model.light);
+
     let mut shader = GouphShader::new(model.face_num, cor_conv, &model);
 
     for i in 0..model.face_num {
         let mut screen_coords = [Vector3::new(0.0, 0.0, 0.0); 3];
-
         for j in 0..3 {
             screen_coords[j] = shader.vertex(i, j)
         }
-
         triangle(&model, i, &screen_coords, image, &mut z_buffer, &mut shader);
     }
 }
