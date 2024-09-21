@@ -11,7 +11,7 @@ pub struct GouphShader<'a> {
 
 impl<'a> GouphShader<'a> {
     const K_D: f32 = 1.0;
-    const K_S: f32 = 0.6;
+    const K_S: f32 = 1.5;
 }
 
 impl<'a> GouphShader<'a> {
