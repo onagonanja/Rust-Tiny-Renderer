@@ -112,8 +112,6 @@ pub fn render_obj(model: &mut WModel, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>)
                 &mut shader,
             );
         }
-
-        output_image("shadow.png", &mut shadow_img);
     }
 
     let m = cor_conv;

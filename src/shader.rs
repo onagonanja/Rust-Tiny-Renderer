@@ -64,6 +64,7 @@ impl Shader for GouphShader<'_> {
         let v = Vector3::new(v.x / v.w, v.y / v.w, v.z / v.w);
         self.varyng_tri[(0, v_idx)] = v.x;
         self.varyng_tri[(1, v_idx)] = v.y;
+        self.varyng_tri[(2, v_idx)] = v.z;
         v
     }
 
@@ -81,7 +82,8 @@ impl Shader for GouphShader<'_> {
             shadow_p.z / shadow_p.w,
         );
         let shadow_idx = shadow_p.x as usize + shadow_p.y as usize * WIDTH as usize;
-        let shadow_intensity = 0.3 + 0.7 * (self.shadow_buf[shadow_idx] < shadow_p.z) as u8 as f32;
+        let shadow_intensity =
+            0.3 + 0.7 * (self.shadow_buf[shadow_idx] < shadow_p.z + 0.01) as u8 as f32;
 
         let l = self.trans_light * Vector4::new(LIGHT_DIR.x, LIGHT_DIR.y, LIGHT_DIR.z, 0.0);
         let l = Vector3::new(l.x, l.y, l.z).normalize();
@@ -98,7 +100,7 @@ impl Shader for GouphShader<'_> {
         for i in 0..3 {
             color[i] = (10.0
                 + (color[i] as f32)
-                    //* shadow_intensity
+                    * shadow_intensity
                     * (GouphShader::K_D * intensity + (GouphShader::K_S * specular_i)))
                 .min(255.0) as u8;
         }
