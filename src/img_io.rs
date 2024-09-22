@@ -136,6 +136,10 @@ impl WModel {
         )
     }
 
+    pub fn get_uv(&self, face_index: usize, vertex_index: usize) -> Vector2<f32> {
+        self.tex_uv[face_index][vertex_index]
+    }
+
     pub fn get_face_uv(&self, face_index: usize) -> [Vector2<f32>; 3] {
         self.tex_uv[face_index]
     }

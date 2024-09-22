@@ -1,11 +1,11 @@
 use image::{ImageBuffer, Rgb};
-use nalgebra::{Vector2, Vector3};
+use nalgebra::{Matrix4, Vector2, Vector3};
 
 use crate::{
-    consts::{ASPECT, CAMERA, FOVY},
+    consts::{ASPECT, CAMERA, FOVY, LIGHT},
     geometry,
-    img_io::WModel,
-    shader::GouphShader,
+    img_io::{output_image, WModel},
+    shader::{DepthShader, GouphShader, Shader},
 };
 
 // calculate barycentric coordinates
@@ -29,7 +29,7 @@ pub fn triangle(
     pts: &[Vector3<f32>; 3],
     image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>,
     z_buffer: &mut [f32],
-    shader: &mut GouphShader,
+    shader: &mut dyn Shader,
 ) {
     let triangle_tex_coords = model.get_face_uv(face_index);
 
@@ -69,14 +69,8 @@ pub fn triangle(
                     (uv.x * model.texture.width() as f32) as u32,
                     (uv.y * model.texture.height() as f32) as u32,
                 );
-
-                let spec_color = model.specular_tex.get_pixel(
-                    (uv.x * model.specular_tex.width() as f32) as u32,
-                    (uv.y * model.specular_tex.height() as f32) as u32,
-                );
-
                 let mut color = Rgb([color[0], color[1], color[2]]);
-                shader.fragment(&mut color, &spec_color, &uv);
+                shader.fragment(&mut color, bc_screen);
                 image.put_pixel(x as u32, y as u32, color);
             }
         }
@@ -84,35 +78,67 @@ pub fn triangle(
 }
 
 pub fn render_obj(model: &mut WModel, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>) {
-    let mut z_buffer = vec![f32::MIN; (image.width() * image.height()) as usize];
-
-    let projection = geometry::get_projection(FOVY, ASPECT, -1.0);
+    let mut projection = Matrix4::identity();
     let viewport = geometry::get_viewport(
         image.width() as f32 / 8.0,
         image.height() as f32 / 8.0,
         image.width() as f32 * 3.0 / 4.0,
         image.height() as f32 * 3.0 / 4.0,
     );
-    let lookat = geometry::get_lookat(
-        Vector3::new(CAMERA.x, CAMERA.y, CAMERA.z),
+    let mut lookat = geometry::get_lookat(
+        Vector3::new(LIGHT.x, LIGHT.y, LIGHT.z),
         Vector3::new(0.0, 0.0, 0.0),
         Vector3::new(0.0, 1.0, 0.0),
     );
-
     let cor_conv = viewport * projection * lookat;
-    model.trans_normals(&lookat);
+    let mut shadow_buf = vec![f32::MIN; (image.width() * image.height()) as usize];
 
-    // println!("{:?}", model.light);
-    // model.trans_light(&lookat);
-    // println!("{:?}", model.light);
-
-    let mut shader = GouphShader::new(model.face_num, cor_conv, &model);
-
-    for i in 0..model.face_num {
-        let mut screen_coords = [Vector3::new(0.0, 0.0, 0.0); 3];
-        for j in 0..3 {
-            screen_coords[j] = shader.vertex(i, j)
+    // render shadow buffer
+    {
+        let mut shadow_img: ImageBuffer<Rgb<u8>, Vec<u8>> =
+            ImageBuffer::new(image.width(), image.height());
+        let mut shader = DepthShader::new(cor_conv, &model);
+        for i in 0..model.face_num {
+            let mut screen_coords = [Vector3::new(0.0, 0.0, 0.0); 3];
+            for j in 0..3 {
+                screen_coords[j] = shader.vertex(i, j)
+            }
+            triangle(
+                &model,
+                i,
+                &screen_coords,
+                &mut shadow_img,
+                &mut shadow_buf,
+                &mut shader,
+            );
         }
-        triangle(&model, i, &screen_coords, image, &mut z_buffer, &mut shader);
+
+        output_image("shadow.png", &mut shadow_img);
+    }
+
+    let m = cor_conv;
+
+    // render frame buffer
+    {
+        projection = geometry::get_projection(FOVY, ASPECT, -1.0);
+        lookat = geometry::get_lookat(
+            Vector3::new(CAMERA.x, CAMERA.y, CAMERA.z),
+            Vector3::new(0.0, 0.0, 0.0),
+            Vector3::new(0.0, 1.0, 0.0),
+        );
+        let cor_conv = viewport * projection * lookat;
+
+        let mut z_buffer = vec![f32::MIN; (image.width() * image.height()) as usize];
+        let trans_nm = lookat.transpose().try_inverse().unwrap();
+        let trans_shadow = m * (cor_conv.try_inverse()).unwrap();
+        let mut shader =
+            GouphShader::new(cor_conv, &model, trans_nm, trans_shadow, lookat, shadow_buf);
+        for i in 0..model.face_num {
+            let mut screen_coords = [Vector3::new(0.0, 0.0, 0.0); 3];
+            for j in 0..3 {
+                screen_coords[j] = shader.vertex(i, j)
+            }
+            triangle(&model, i, &screen_coords, image, &mut z_buffer, &mut shader);
+        }
     }
 }

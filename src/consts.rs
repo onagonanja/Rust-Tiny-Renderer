@@ -1,6 +1,9 @@
 use lazy_static::lazy_static;
 use nalgebra::Vector3;
 
+pub static WIDTH: u32 = 1600;
+pub static HEIGHT: u32 = 1600;
+
 pub static DEPTH: i32 = 100;
 pub static CAMERA: Vector3<f32> = Vector3::new(1.0, 1.0, 2.5);
 pub static FOVY: f32 = std::f32::consts::FRAC_PI_4;
@@ -17,5 +20,6 @@ pub static DIABLO3_SPECTURE: &str = "obj/diablo3_pose_spec.tga";
 pub static DIABLO3_NORMAL: &str = "obj/diablo3_pose_nm.tga";
 
 lazy_static! {
-    pub static ref LIGHT_DIR: Vector3<f32> = Vector3::new(0.0, 0.0, 1.0).normalize();
+    pub static ref LIGHT: Vector3<f32> = Vector3::new(0.0, 0.0, 2.5).normalize();
+    pub static ref LIGHT_DIR: Vector3<f32> = LIGHT.normalize();
 }
