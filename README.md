@@ -1,7 +1,7 @@
 # Rust Tiny Renderer
 
 Rust implementation of a rasterized renderer.
-I use this code as a reference [Tiny Render](https://github.com/ssloy/tinyrenderer) in Rust.
+I use this code as a reference [Tiny Render](https://github.com/ssloy/tinyrenderer)
 
 ## Examples
 ![image](https://github.com/user-attachments/assets/9812e389-47f0-4c4f-be3c-61ddae4ca16b)
